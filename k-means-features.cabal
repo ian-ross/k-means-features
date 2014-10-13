@@ -1,0 +1,32 @@
+name:          k-means-features
+version:       0.1.0.0
+license:       AllRightsReserved
+license-file:  LICENSE
+author:        Ian Ross
+maintainer:    ian@skybluetrades.net
+category:      Data
+build-type:    Simple
+cabal-version: >=1.10
+
+library
+  exposed-modules: Data.KMeans.Feature
+  -- other-modules:
+  -- other-extensions:
+  build-depends: base                     >= 4.6        && < 5
+               , containers               >= 0.5        && < 0.6
+               , vector
+               , CV                       >= 0.4
+  hs-source-dirs:   lib
+  default-language: Haskell2010
+
+executable build-features
+  build-depends: base                     >= 4.6        && < 5
+               , k-means-features
+               , directory
+               , filepath
+               , CV                       >= 0.4
+               , cmdtheline
+               , random
+               , vector
+  hs-source-dirs: src
+  main-is:        build-features.hs
