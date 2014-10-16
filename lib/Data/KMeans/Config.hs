@@ -17,6 +17,7 @@ data Config = Config { configDbHost :: String
                      , configFeatureSize :: Int
                      , configWhiten :: Bool
                      , configImageDirectory :: String
+                     , configPoolingDivisor :: Int
                      } deriving Show
 
 instance FromJSON Config where
@@ -34,6 +35,7 @@ instance FromJSON Config where
       <*> fs .: "feature_size" `mplus` return 6
       <*> fs .: "whiten_data" `mplus` return False
       <*> v  .: "image_directory"
+      <*> fs .: "pooling_divisor" `mplus` return 2
   parseJSON _ = fail "Object expected"
 
 readConfig :: FilePath -> IO Config

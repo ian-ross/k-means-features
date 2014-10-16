@@ -7,11 +7,9 @@ module Data.KMeans.Database
 
 import Prelude hiding (zip, length)
 import Control.Monad
-import Data.Vector (Vector)
 import Data.Vector hiding (map, zipWith)
 import qualified Data.Vector.Unboxed as U
 import Database.PostgreSQL.Simple
-import Database.PostgreSQL.Simple.ToField
 import Database.PostgreSQL.Simple.SqlQQ
 
 import Data.KMeans.Config
@@ -33,7 +31,7 @@ saveFeatures :: Connection -> Features -> IO ()
 saveFeatures conn fs = do
   let s :: [(Int, Vector Double)]
       s = zipWith (\i v -> (i, convert v)) [1..length fs] (toList fs)
-  execute_ conn [sql|DELETE FROM features|]
+  void $ execute_ conn [sql|DELETE FROM features|]
   void $ executeMany conn [sql|INSERT INTO features (id, feature)
                                     VALUES (?, ?)|] s
 

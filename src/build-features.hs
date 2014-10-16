@@ -12,7 +12,6 @@ import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector as G
 import qualified Data.Vector.Storable as S
 import Data.List (intercalate)
-import Data.Maybe
 import System.Directory
 import System.Environment
 import System.FilePath
@@ -22,8 +21,6 @@ import System.Random
 import System.IO
 import CV.Image hiding (Complex)
 import Numeric.LinearAlgebra.HMatrix hiding (Vector, fromList, (!))
-
-import Debug.Trace
 
 import Data.KMeans.Config
 import Data.KMeans.Feature
@@ -113,13 +110,13 @@ doKMeans nclust xs = do
                 ", iter.max=50, nstart=20)"
               , "write.table(res$centers, \"" ++ cfile ++ "\", " ++
                   "row.names=FALSE, col.names=FALSE)" ]
-  (out, err) <- pshIn "R --slave" rcmds
+  (_, err) <- pshIn "R --slave" rcmds
   when (err /= "") $ error err
   dat <- readFile cfile
   removeFile dfile
   removeFile cfile
-  let conv s = G.convert $ G.map read $ G.fromList $ words s
-  return $ G.map conv $ G.fromList $ lines dat
+  let resconv s = G.convert $ G.map read $ G.fromList $ words s
+  return $ G.map resconv $ G.fromList $ lines dat
 
 
 -- Safely run a subsidiary process, passing input and collecting
