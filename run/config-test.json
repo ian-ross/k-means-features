@@ -1,0 +1,16 @@
+{
+  "database": {
+    "host":     "localhost",
+    "port":     5432,
+    "user":     "kmeans",
+    "password": "kmeans",
+    "name":     "kmeans"
+  },
+  "features": {
+    "patch_count": 10,
+    "feature_count": 4,
+    "feature_size": 2,
+    "whiten_data": true
+  },
+  "image_directory": "/big/project-storage/findmelike/poster-images"
+}

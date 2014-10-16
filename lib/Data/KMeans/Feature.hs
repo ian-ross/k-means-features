@@ -1,6 +1,7 @@
 module Data.KMeans.Feature
-       ( Feature, featureToImage, featureMontage
-       , Patch, patchToImage, patchMontage
+       ( Feature, Features, featureToImage, featureMontage
+       , Patch, Patches, patchToImage, patchMontage
+       , imageExtract
        ) where
 
 import Prelude hiding (map, zip3)
@@ -12,7 +13,9 @@ import CV.Image
 import System.IO.Unsafe
 
 type Feature = Vector Double
+type Features = G.Vector Feature
 type Patch = Vector D8
+type Patches = G.Vector Patch
 
 featureToImage :: Int -> Feature -> Image RGB D32
 featureToImage sz feat = unsafePerformIO $ do
@@ -36,7 +39,7 @@ patchToImage sz feat = unsafePerformIO $ do
         setPixel (i, j) (pxs ! (i * sz + j)) img
     return img
 
-featureMontage :: Int -> G.Vector Feature -> Image RGB D32
+featureMontage :: Int -> Features -> Image RGB D32
 featureMontage sz feats = montage (rows, cols) 2 imgs
   where imgs = G.toList $ G.map (featureToImage sz) feats
         n = G.length feats
@@ -44,10 +47,13 @@ featureMontage sz feats = montage (rows, cols) 2 imgs
         cols = if isqrt * isqrt == n then isqrt else isqrt + 1
         rows = if n `mod` cols == 0 then n `div` cols else (n `div` cols) + 1
 
-patchMontage :: Int -> G.Vector Patch -> Image RGB D32
+patchMontage :: Int -> Patches -> Image RGB D32
 patchMontage sz feats = montage (rows, cols) 2 imgs
   where imgs = G.toList $ G.map (unsafeImageTo32F . patchToImage sz) feats
         n = G.length feats
         isqrt = truncate (sqrt $ fromIntegral n)
         cols = if isqrt * isqrt == n then isqrt else isqrt + 1
         rows = if n `mod` cols == 0 then n `div` cols else (n `div` cols) + 1
+
+imageExtract :: Features -> Image RGB D32 -> Feature
+imageExtract feats img = fromList [1,2,3]

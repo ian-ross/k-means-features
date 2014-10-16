@@ -21,6 +21,7 @@ library
                , aeson
                , bytestring
                , postgresql-simple
+               , hmatrix
   hs-source-dirs:   lib
   default-language: Haskell2010
 
@@ -35,5 +36,21 @@ executable build-features
                , CV                       >= 0.4
                , random
                , vector
+               , hmatrix
   hs-source-dirs: src
   main-is:        build-features.hs
+
+executable process-images
+  build-depends: base                     >= 4.6        && < 5
+               , k-means-features
+               , deepseq
+               , directory
+               , filepath
+               , process
+               , unix
+               , CV                       >= 0.4
+               , random
+               , vector
+               , hmatrix
+  hs-source-dirs: src
+  main-is:        process-images.hs

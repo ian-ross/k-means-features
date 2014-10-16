@@ -10,6 +10,7 @@ import Control.Monad
 import Data.Vector.Unboxed (fromList, length, map, all, sum, (!))
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector as G
+import qualified Data.Vector.Storable as S
 import Data.List (intercalate)
 import Data.Maybe
 import System.Directory
@@ -19,7 +20,8 @@ import System.Posix.Process
 import System.Process
 import System.Random
 import System.IO
-import CV.Image
+import CV.Image hiding (Complex)
+import Numeric.LinearAlgebra.HMatrix hiding (Vector, fromList, (!))
 
 import Debug.Trace
 
@@ -50,15 +52,17 @@ doit cfg = do
   putStrLn $ "patchsize=" ++ show patchsize ++ "  whiten=" ++ show whiten
   putStrLn "Extracting patches..."
   patches <- G.replicateM npatches $ extractPatch patchsize images
-  let normpatches = G.map preprocess patches
+  let normpatches = G.map (preprocess . map fromIntegral) patches
       gopatches = if whiten then whitenData normpatches else normpatches
   saveImage "orig-patch-montage.png" $ patchMontage patchsize patches
+  saveImage "norm-patch-montage.png" $ featureMontage patchsize normpatches
   saveImage "preproc-patch-montage.png" $ featureMontage patchsize gopatches
   putStrLn "Clustering..."
   features <- doKMeans nfeatures gopatches
   putStrLn $ "#features=" ++ show (G.length features)
   saveImage "feature-montage.png" $ featureMontage patchsize features
   saveFeatures db features
+
 
 -- Extract a random patch from a random image.
 extractPatch :: Int -> G.Vector FilePath -> IO (Vector D8)
@@ -71,25 +75,32 @@ extractPatch sz imgs = do
   let (r, g, b) = unzip3 $ getAllPixels $ getRegion (px, py) (sz, sz) img
   return $ fromList $ r ++ g ++ b
 
--- Brightness and contrast normalisation.
-preprocess :: Vector D8 -> Vector Double
-preprocess vin = map f dvin
+
+-- Per-patch local brightness and contrast normalisation.
+preprocess :: Feature -> Feature
+preprocess vin = map f vin
   where f = if all (== (vin ! 0)) vin then const 0 else \x -> (x - m) / sd
         n = fromIntegral $ length vin
-        dvin = map fromIntegral vin :: Vector Double
-        tot = sum dvin
-        totsq = sum $ map (**2) dvin
-        m = tot / n
-        msq = totsq / n
+        msq = sum (map (**2) vin) / n
+        m = sum vin / n
         sd = sqrt $ msq - m * m
 
-whitenData :: G.Vector (Vector Double) -> G.Vector (Vector Double)
-whitenData xs = xs
+
+-- ZCA data whitening transform.
+whitenData :: Features -> Features
+whitenData xsin = fromMatrix $ w <> xs
+  where xs = toMatrix xsin
+        w = zca $ xs `mul` tr xs
+        fromMatrix = (G.map S.convert) . G.fromList . toColumns
+        toMatrix = fromColumns . G.toList . (G.map S.convert)
+        zcaf x = if x < 0 then 0 else 1.0 / sqrt x
+        zca m = let (l, v) = eigSH m
+                in v `mul` diag (cmap zcaf l) `mul` inv v
 
 
 -- Use R kmeans function for centroid calculation after (optional
 -- whitening).
-doKMeans :: Int -> G.Vector (Vector Double) -> IO (G.Vector (Vector Double))
+doKMeans :: Int -> Features -> IO Features
 doKMeans nclust xs = do
   pid <- getProcessID
   let vtos x = intercalate " " $ G.toList $ G.map show $ G.convert x
@@ -98,7 +109,8 @@ doKMeans nclust xs = do
   withFile dfile WriteMode $ \h -> G.forM_ (G.map vtos xs) (hPutStrLn h)
   let rcmds = unlines
               [ "d <- read.table(\"" ++ dfile ++ "\")"
-              , "res <- kmeans(d, " ++ show nclust ++ ", nstart=20)"
+              , "res <- kmeans(d, " ++ show nclust ++
+                ", iter.max=50, nstart=20)"
               , "write.table(res$centers, \"" ++ cfile ++ "\", " ++
                   "row.names=FALSE, col.names=FALSE)" ]
   (out, err) <- pshIn "R --slave" rcmds
