@@ -11,6 +11,7 @@ cabal-version: >=1.10
 library
   exposed-modules: Data.KMeans.Feature
                  , Data.KMeans.Config
+                 , Data.KMeans.Database
   -- other-modules:
   -- other-extensions:
   build-depends: base                     >= 4.6        && < 5
@@ -19,6 +20,7 @@ library
                , CV                       >= 0.4
                , aeson
                , bytestring
+               , postgresql-simple
   hs-source-dirs:   lib
   default-language: Haskell2010
 

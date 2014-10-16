@@ -25,6 +25,7 @@ import Debug.Trace
 
 import Data.KMeans.Config
 import Data.KMeans.Feature
+import Data.KMeans.Database
 
 
 main :: IO ()
@@ -43,6 +44,7 @@ doit cfg = do
       whiten = configWhiten cfg
   images <- G.fromList <$> Prelude.map (imgdir </>) <$>
             filter (\p -> head p /= '.') <$> getDirectoryContents imgdir
+  db <- openDatabase cfg
   putStrLn $ "Images: " ++ show (G.length images)
   putStrLn $ "npatches=" ++ show npatches ++ "  nfeatures=" ++ show nfeatures
   putStrLn $ "patchsize=" ++ show patchsize ++ "  whiten=" ++ show whiten
@@ -50,12 +52,13 @@ doit cfg = do
   patches <- G.replicateM npatches $ extractPatch patchsize images
   let normpatches = G.map preprocess patches
       gopatches = if whiten then whitenData normpatches else normpatches
-  saveImage "patches0.png" $ patchMontage patchsize patches
-  saveImage "patches.png" $ featureMontage patchsize gopatches
+  saveImage "orig-patch-montage.png" $ patchMontage patchsize patches
+  saveImage "preproc-patch-montage.png" $ featureMontage patchsize gopatches
   putStrLn "Clustering..."
   features <- doKMeans nfeatures gopatches
   putStrLn $ "#features=" ++ show (G.length features)
-  saveImage "features.png" $ featureMontage patchsize features
+  saveImage "feature-montage.png" $ featureMontage patchsize features
+  saveFeatures db features
 
 -- Extract a random patch from a random image.
 extractPatch :: Int -> G.Vector FilePath -> IO (Vector D8)
