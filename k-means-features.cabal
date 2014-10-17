@@ -58,3 +58,22 @@ executable process-images
   ghc-options: -Wall -O2
   ghc-prof-options: -auto-all -caf-all
   main-is:        process-images.hs
+
+executable image-query
+  build-depends: base                     >= 4.6        && < 5
+               , k-means-features
+               , deepseq
+               , containers
+               , directory
+               , filepath
+               , process
+               , unix
+               , CV                       >= 0.4
+               , random
+               , vector
+               , hmatrix
+               , KdTree
+  hs-source-dirs: src
+  ghc-options: -Wall -O2
+  ghc-prof-options: -auto-all -caf-all
+  main-is:        image-query.hs

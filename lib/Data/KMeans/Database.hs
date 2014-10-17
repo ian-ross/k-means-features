@@ -2,10 +2,11 @@
 module Data.KMeans.Database
        ( Connection, openDatabase
        , saveFeatures, loadFeatures
-       , clearImageFeatures, saveImageFeatures
+       , clearImageFeatures, saveImageFeatures, loadImageFeatures
        ) where
 
 import Prelude hiding (zip, length)
+import Control.Arrow (second)
 import Control.Monad
 import Data.Vector hiding (map, zipWith)
 import qualified Data.Vector.Unboxed as U
@@ -53,3 +54,11 @@ saveImageFeatures conn name feat =
   void $ execute conn [sql|INSERT INTO images (id, features)
                                 VALUES (?, ?)|]
                  (name, convert feat :: Vector Double)
+
+
+loadImageFeatures :: Connection -> IO [(String, Feature)]
+loadImageFeatures conn = do
+  fs <- query_ conn [sql|SELECT id, features
+                           FROM images
+                          ORDER BY id|] :: IO [(String, Vector Double)]
+  return $ map (second U.convert) fs
